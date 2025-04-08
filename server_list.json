@@ -1,0 +1,6 @@
+{
+    "name": "Dev Server",
+    "description": "This server is located in Frankfurt.",
+    "host": "https://furnace.30062022.xyz",
+    "auth_types": ["default", "discord", "github", "google"]
+}
