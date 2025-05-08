@@ -2,6 +2,9 @@ use actix_web::{App, HttpResponse, HttpServer, Responder, get, post, web};
 use sea_orm::{ConnectOptions, Database};
 use std::{env, time::Duration};
 
+mod globals;
+mod user;
+
 #[get("/")]
 async fn hello() -> impl Responder {
     HttpResponse::Ok().body("Hello world!")
@@ -10,12 +13,11 @@ async fn hello() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-    let host = env::var("HOST").expect("HOST is not set in .env file");
-    let port = env::var("PORT")
-        .expect("PORT is not set in .env file")
-        .parse::<u16>()
-        .unwrap();
+    std::env::set_var("RUST_LOG", "info");
+
+    let db_url = globals::DATABASE_URL;
+    let host = globals::HOST;
+    let port = globals::PORT;
 
     let mut opt = ConnectOptions::new(db_url);
     opt.max_connections(100)
