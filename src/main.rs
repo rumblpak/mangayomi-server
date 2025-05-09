@@ -1,45 +1,48 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, get, post, web};
+use actix_web::{App, HttpServer, Responder, web};
 use sea_orm::{ConnectOptions, Database};
-use std::{env, time::Duration};
+use std::time::Duration;
 
+mod db;
+mod entity;
 mod globals;
 mod user;
-
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
-    std::env::set_var("RUST_LOG", "info");
+    unsafe {
+        std::env::set_var("RUST_LOG", "info");
+    }
 
-    let db_url = globals::DATABASE_URL;
-    let host = globals::HOST;
-    let port = globals::PORT;
+    let db_url = globals::DATABASE_URL.as_str();
+    let host = globals::HOST.as_str();
+    let port = globals::PORT.as_str();
 
-    let mut opt = ConnectOptions::new(db_url);
-    opt.max_connections(100)
-        .min_connections(1)
-        .connect_timeout(Duration::from_secs(8))
-        .acquire_timeout(Duration::from_secs(8))
-        .idle_timeout(Duration::from_secs(8))
-        .max_lifetime(Duration::from_secs(8))
-        .sqlx_logging(true)
-        .sqlx_logging_level(log::LevelFilter::Info)
-        .set_schema_search_path("mangayomi");
+    db::CONN
+        .get_or_init(|| async {
+            let mut opt = ConnectOptions::new(db_url);
+            opt.max_connections(100)
+                .min_connections(1)
+                .connect_timeout(Duration::from_secs(8))
+                .acquire_timeout(Duration::from_secs(8))
+                .idle_timeout(Duration::from_secs(8))
+                .max_lifetime(Duration::from_secs(8))
+                .sqlx_logging(true)
+                .sqlx_logging_level(log::LevelFilter::Info)
+                .set_schema_search_path("mangayomi");
 
-    let conn = Database::connect(opt)
-        .await
-        .expect("Failed to connect to database");
+            Database::connect(opt).await.unwrap()
+        })
+        .await;
+
+    let conn = db::CONN.get().unwrap();
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(conn.clone()))
-            .service(hello)
+            .service(user::controller::register)
     })
-    .bind((host, port))?
+    .bind(format!("{}:{}", host, port))?
     .run()
     .await
 }
