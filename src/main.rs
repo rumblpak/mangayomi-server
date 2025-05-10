@@ -28,8 +28,7 @@ async fn main() -> std::io::Result<()> {
                 .idle_timeout(Duration::from_secs(8))
                 .max_lifetime(Duration::from_secs(8))
                 .sqlx_logging(true)
-                .sqlx_logging_level(log::LevelFilter::Info)
-                .set_schema_search_path("mangayomi");
+                .sqlx_logging_level(log::LevelFilter::Info);
 
             Database::connect(opt).await.unwrap()
         })

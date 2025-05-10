@@ -1,21 +1,51 @@
-use actix_web::{post, web, Result};
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter};
+use crate::db;
+use crate::entity::accounts as account;
+use actix_web::{Result, post, web};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::Deserialize;
-use crate::entity::accounts::{self, Entity as Account};
 
 #[derive(Deserialize)]
 struct BasicUser {
-    username: String,
+    email: String,
     password: String,
 }
 
 /// deserialize `user` from request's body
 #[post("/register")]
 async fn register(user: web::Json<BasicUser>) -> Result<String> {
-    Ok(format!("Welcome {}!", user.username))
+    let result = register_account(&user, db::CONN.get().unwrap());
+    match result.await {
+        Some(account) => Ok(format!("Welcome {}!", account.email)),
+        None => Ok(format!("User not found {}!", user.email)),
+    }
 }
 
-/// WIP
-async fn find_user(email: String, db: DatabaseConnection) {
-    let account: Option<accounts::Model> = Account::find().one(&db).await.unwrap();
+/// inserts a new account if it does not exist yet
+async fn register_account(
+    user: &web::Json<BasicUser>,
+    db: &DatabaseConnection,
+) -> Option<account::Model> {
+    let is_registered: bool = find_account(&user.email, db).await.is_some();
+    if !is_registered {
+        let account = account::ActiveModel {
+            email: Set(user.email.to_owned()),
+            password: Set(user.password.to_owned()),
+            ..Default::default()
+        };
+        let account = account
+            .insert(db)
+            .await
+            .map_or(None, |account| Option::from(account));
+        return account;
+    }
+    None
+}
+
+/// returns an account with the matching email
+async fn find_account(email: &String, db: &DatabaseConnection) -> Option<account::Model> {
+    account::Entity::find()
+        .filter(account::Column::Email.eq(email))
+        .one(db)
+        .await
+        .map_or(None, |account| account)
 }
