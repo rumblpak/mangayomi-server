@@ -26,6 +26,7 @@ async fn register_account(
     db: &DatabaseConnection,
 ) -> Option<account::Model> {
     let is_registered: bool = find_account(&user.email, db).await.is_some();
+    log::info!("{}", is_registered);
     if !is_registered {
         let account = account::ActiveModel {
             email: Set(user.email.to_owned()),

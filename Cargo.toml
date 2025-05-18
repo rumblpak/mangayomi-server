@@ -30,3 +30,5 @@ url = "2.5.4"
 totp-rs = { version = "5.7.0", features = ["qr"] }
 serde = "1.0.219"
 tokio = "1.45.0"
+actix-session = "0.10.1"
+env_logger = "0.11.8"

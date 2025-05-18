@@ -1,6 +1,8 @@
 use actix_web::{App, HttpServer, Responder, web};
 use sea_orm::{ConnectOptions, Database};
 use std::time::Duration;
+use actix_web::middleware::Logger;
+use env_logger::Env;
 
 mod db;
 mod entity;
@@ -11,12 +13,15 @@ mod user;
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
     unsafe {
-        std::env::set_var("RUST_LOG", "info");
+        std::env::set_var("RUST_LOG", "debug");
     }
+    env_logger::init();
 
     let db_url = globals::DATABASE_URL.as_str();
     let host = globals::HOST.as_str();
     let port = globals::PORT.as_str();
+    
+    log::info!("Connecting to {}:{}...", db_url, host);
 
     db::CONN
         .get_or_init(|| async {
@@ -28,7 +33,7 @@ async fn main() -> std::io::Result<()> {
                 .idle_timeout(Duration::from_secs(8))
                 .max_lifetime(Duration::from_secs(8))
                 .sqlx_logging(true)
-                .sqlx_logging_level(log::LevelFilter::Info);
+                .sqlx_logging_level(log::LevelFilter::Debug);
 
             Database::connect(opt).await.unwrap()
         })
@@ -38,6 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(conn.clone()))
             .service(user::controller::register)
     })
