@@ -33,11 +33,15 @@ async fn register_account(
             password: Set(user.password.to_owned()),
             ..Default::default()
         };
-        let account = account
+        return match account
             .insert(db)
-            .await
-            .map_or(None, |account| Option::from(account));
-        return account;
+            .await {
+            Ok(model) => Some(model),
+            Err(err) => {
+                log::error!("{}", err);
+                None
+            },
+        }
     }
     None
 }
