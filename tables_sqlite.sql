@@ -11,10 +11,10 @@
 -- Table `accounts`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `accounts` (
-  `id` INT AUTOINCREMENT NOT NULL,
+  `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   `email` VARCHAR(512) NOT NULL,
   `password` VARCHAR(1024) NOT NULL,
-  PRIMARY KEY (`id`));
+  `salt` VARCHAR(1024) NOT NULL);
 
 
 -- -----------------------------------------------------
