@@ -1,8 +1,10 @@
-use actix_web::{App, HttpServer, Responder, web};
+use actix_identity::IdentityMiddleware;
+use actix_session::{SessionMiddleware, storage::RedisSessionStore};
+use actix_web::cookie::Key;
+use actix_web::middleware::Logger;
+use actix_web::{App, HttpServer, web};
 use sea_orm::{ConnectOptions, Database};
 use std::time::Duration;
-use actix_web::middleware::Logger;
-use env_logger::Env;
 
 mod db;
 mod entity;
@@ -17,10 +19,15 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
+    let secret_key = Key::generate();
+    let redis_store = RedisSessionStore::new("redis://127.0.0.1:6379")
+        .await
+        .unwrap();
+
     let db_url = globals::DATABASE_URL.as_str();
     let host = globals::HOST.as_str();
     let port = globals::PORT.as_str();
-    
+
     log::info!("Connecting to {}:{}...", db_url, host);
 
     db::CONN
@@ -44,6 +51,11 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(IdentityMiddleware::default())
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
             .app_data(web::Data::new(conn.clone()))
             .service(user::controller::register)
     })
