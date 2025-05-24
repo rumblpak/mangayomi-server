@@ -1,9 +1,10 @@
 use actix_identity::IdentityMiddleware;
-use actix_session::storage::{CookieSessionStore};
-use actix_session::{SessionMiddleware};
+use actix_session::SessionMiddleware;
+use actix_session::config::{PersistentSession, TtlExtensionPolicy};
+use actix_session::storage::CookieSessionStore;
 use actix_web::cookie::Key;
-use actix_web::middleware::Logger;
-use actix_web::{App, HttpServer, web};
+use actix_web::middleware::{Logger, NormalizePath};
+use actix_web::{App, HttpResponse, HttpServer, cookie::time::Duration as CookieDuration, web};
 use sea_orm::{ConnectOptions, Database};
 use std::time::Duration;
 
@@ -11,6 +12,7 @@ mod db;
 mod entity;
 mod globals;
 mod user;
+mod sync;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -23,6 +25,7 @@ async fn main() -> std::io::Result<()> {
     let db_url = globals::DATABASE_URL.as_str();
     let host = globals::HOST.as_str();
     let port = globals::PORT.as_str();
+    let session_ttl = &globals::SESSION_TTL;
     // let redis_url = globals::REDIS_URL.as_str();
 
     let secret_key = Key::generate();
@@ -39,7 +42,7 @@ async fn main() -> std::io::Result<()> {
                 .idle_timeout(Duration::from_secs(8))
                 .max_lifetime(Duration::from_secs(8))
                 .sqlx_logging(true)
-                .sqlx_logging_level(log::LevelFilter::Debug);
+                .sqlx_logging_level(log::LevelFilter::Info);
 
             Database::connect(opt).await.unwrap()
         })
@@ -67,15 +70,24 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(NormalizePath::trim())
             .wrap(IdentityMiddleware::default())
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                secret_key.clone(),
-            ))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .session_lifecycle(
+                        PersistentSession::default()
+                            .session_ttl(CookieDuration::days(**session_ttl))
+                            .session_ttl_extension_policy(TtlExtensionPolicy::OnEveryRequest),
+                    )
+                    .build(),
+            )
             .app_data(web::Data::new(conn.clone()))
             .service(user::controller::register)
             .service(user::controller::login)
             .service(user::controller::logout)
+            .service(user::controller::home)
+            .service(user::controller::unprotected)
+            .default_service(web::to(|| HttpResponse::NotFound()))
     })
     .bind(format!("{}:{}", host, port))?
     .run()

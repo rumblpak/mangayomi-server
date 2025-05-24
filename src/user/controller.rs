@@ -34,3 +34,15 @@ async fn logout(user: Identity) -> Result<String> {
     user.logout();
     Ok("Logged out!".to_owned())
 }
+
+/// logout from session
+#[get("/")]
+async fn home(user: Identity) -> Result<String> {
+    Ok(format!("Welcome {}!", user.id()?))
+}
+
+/// logout from session
+#[get("/unprotected")]
+async fn unprotected() -> Result<String> {
+    Ok("Test".to_owned())
+}
