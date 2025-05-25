@@ -1,10 +1,10 @@
-use crate::entity::manga::{ActiveModel, Column, Entity, Model};
+use crate::entity::categories::{ActiveModel, Column, Entity, Model};
 use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelBehavior, ActiveModelTrait, ColumnTrait, Set};
 use sea_orm::{DatabaseConnection, EntityTrait};
 
 /// returns an account with the matching email
-pub async fn sync_manga_list(
+pub async fn sync_category_list(
     user_id: i32,
     manga_list: &Vec<Model>,
     db: &DatabaseConnection,
@@ -53,23 +53,6 @@ fn build_active_model(user_id: i32, manga: &Model, active_item: Option<Model>) -
     };
     model.id = Set(manga.id);
     model.name = Set(manga.name.to_owned());
-    model.artist = Set(manga.artist.to_owned());
-    model.author = Set(manga.author.to_owned());
-    model.custom_cover_from_tracker = Set(manga.custom_cover_from_tracker.to_owned());
-    model.custom_cover_image = Set(manga.custom_cover_image.to_owned());
-    model.date_added = Set(manga.date_added.to_owned());
-    model.description = Set(manga.description.to_owned());
-    model.favorite = Set(manga.favorite.to_owned());
-    model.genres = Set(manga.genres.to_owned());
-    model.image_url = Set(manga.image_url.to_owned());
-    model.is_local_archive = Set(manga.is_local_archive.to_owned());
-    model.item_type = Set(manga.item_type.to_owned());
-    model.lang = Set(manga.lang.to_owned());
-    model.last_read = Set(manga.last_read.to_owned());
-    model.last_update = Set(manga.last_update.to_owned());
-    model.link = Set(manga.link.to_owned());
-    model.source = Set(manga.source.to_owned());
-    model.status_index = Set(manga.status_index.to_owned());
     model.user = Set(user_id);
     model.updated_at = Set(manga.updated_at);
     model

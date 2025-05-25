@@ -1,8 +1,8 @@
 use actix_identity::IdentityMiddleware;
 use actix_session::SessionMiddleware;
-use actix_session::config::{PersistentSession, TtlExtensionPolicy};
+use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
 use actix_session::storage::CookieSessionStore;
-use actix_web::cookie::Key;
+use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{App, HttpResponse, HttpServer, cookie::time::Duration as CookieDuration, web};
 use sea_orm::{ConnectOptions, Database};
@@ -79,6 +79,10 @@ async fn main() -> std::io::Result<()> {
                             .session_ttl(CookieDuration::days(**session_ttl))
                             .session_ttl_extension_policy(TtlExtensionPolicy::OnEveryRequest),
                     )
+                    .cookie_secure(true)
+                    .cookie_same_site(SameSite::Strict)
+                    .cookie_content_security(CookieContentSecurity::Private)
+                    .cookie_http_only(true)
                     .build(),
             )
             .app_data(web::Data::new(conn.clone()))

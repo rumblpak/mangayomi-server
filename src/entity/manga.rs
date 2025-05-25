@@ -28,6 +28,7 @@ pub struct Model {
     pub item_type: i32,
     pub user: i32,
     pub genres: Option<String>,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

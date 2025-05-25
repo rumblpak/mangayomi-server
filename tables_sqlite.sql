@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `manga` (
   `item_type` INT NOT NULL,
   `user` INT NOT NULL,
   `genres` VARCHAR(1024) NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_manga_item_types`
     FOREIGN KEY (`item_type`)

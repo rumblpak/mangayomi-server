@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS `manga` (
   `item_type` INT NOT NULL,
   `user` INT NOT NULL,
   `genres` VARCHAR(1024) NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_manga_item_types_idx` (`item_type` ASC) VISIBLE,
   INDEX `fk_manga_users1_idx` (`user` ASC) VISIBLE,
