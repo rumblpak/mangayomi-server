@@ -93,13 +93,21 @@ CREATE TABLE IF NOT EXISTS `categories` (
   `for_item_type` INT NOT NULL,
   `pos` INT NULL,
   `hide` TINYINT NULL,
+  `user` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
+  CONSTRAINT `fk_categories_users1`
+    FOREIGN KEY (`user`)
+    REFERENCES `accounts` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
   CONSTRAINT `fk_categories_item_types1`
     FOREIGN KEY (`for_item_type`)
     REFERENCES `item_types` (`index`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
 
+CREATE INDEX `fk_categories_users1_idx` ON `accounts` (`id` ASC);
 CREATE INDEX `fk_categories_item_types1_idx` ON `categories` (`for_item_type` ASC);
 
 
@@ -117,6 +125,7 @@ CREATE TABLE IF NOT EXISTS `chapters` (
   `last_page_read` VARCHAR(512) NOT NULL,
   `archive_path` VARCHAR(1024) NULL,
   `manga` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_chapters_manga1`
     FOREIGN KEY (`manga`)
@@ -135,6 +144,7 @@ CREATE TABLE IF NOT EXISTS `histories` (
   `date` VARCHAR(512) NOT NULL,
   `chapter` INT NOT NULL,
   `item_type` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_histories_chapters1`
     FOREIGN KEY (`chapter`)
@@ -184,6 +194,7 @@ CREATE TABLE IF NOT EXISTS `sources` (
   `is_obsolete` TINYINT NULL,
   `is_local` TINYINT NULL,
   `user` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_sources_item_types1`
     FOREIGN KEY (`item_type`)
@@ -228,6 +239,7 @@ CREATE TABLE IF NOT EXISTS `tracks` (
   `total_chapter` INT NULL,
   `tracking_url` VARCHAR(45) NOT NULL,
   `is_manga` TINYINT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_tracks_manga1`
     FOREIGN KEY (`manga_id`)
@@ -253,6 +265,7 @@ CREATE TABLE IF NOT EXISTS `updates` (
   `chapter_name` VARCHAR(1024) NOT NULL,
   `date` VARCHAR(512) NOT NULL,
   `chapter` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_updates_chapters1`
     FOREIGN KEY (`chapter`)

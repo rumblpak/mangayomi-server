@@ -12,6 +12,8 @@ pub struct Model {
     pub for_item_type: i32,
     pub pos: Option<i32>,
     pub hide: Option<i8>,
+    pub user: i32,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -24,6 +26,20 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     ItemTypes,
+    #[sea_orm(
+        belongs_to = "super::accounts::Entity",
+        from = "Column::User",
+        to = "super::accounts::Column::Id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Accounts,
+}
+
+impl Related<super::accounts::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Accounts.def()
+    }
 }
 
 impl Related<super::item_types::Entity> for Entity {

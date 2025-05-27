@@ -11,6 +11,7 @@ pub struct Model {
     pub chapter_name: String,
     pub date: String,
     pub chapter: i32,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -6,24 +6,24 @@ use sea_orm::{DatabaseConnection, EntityTrait};
 /// returns an account with the matching email
 pub async fn sync_category_list(
     user_id: i32,
-    manga_list: &Vec<Model>,
+    category_list: &Vec<Model>,
     db: &DatabaseConnection,
 ) -> Vec<Model> {
-    for manga in manga_list {
-        upsert_manga(user_id, manga, db).await;
+    for category in category_list {
+        upsert_category(user_id, category, db).await;
     }
-    find_all_manga(user_id, db).await
+    find_all_categories(user_id, db).await
 }
 
 /// returns an account with the matching email
-async fn upsert_manga(user_id: i32, manga: &Model, db: &DatabaseConnection) -> Option<Model> {
+async fn upsert_category(user_id: i32, category: &Model, db: &DatabaseConnection) -> Option<Model> {
     let item = Entity::find()
-        .filter(Column::User.eq(user_id).and(Column::Id.eq(manga.id)))
+        .filter(Column::User.eq(user_id).and(Column::Id.eq(category.id)))
         .one(db)
         .await
-        .map_or(None, |manga| manga);
+        .map_or(None, |category| category);
     if item.is_none() {
-        let active_item = build_active_model(user_id, manga, None);
+        let active_item = build_active_model(user_id, category, None);
         return match active_item.insert(db).await {
             Ok(model) => Some(model),
             Err(err) => {
@@ -32,8 +32,8 @@ async fn upsert_manga(user_id: i32, manga: &Model, db: &DatabaseConnection) -> O
             }
         };
     }
-    if item.clone().unwrap().updated_at < manga.updated_at {
-        let active_item = build_active_model(user_id, manga, item);
+    if item.clone().unwrap().updated_at < category.updated_at {
+        let active_item = build_active_model(user_id, category, item);
         return match active_item.update(db).await {
             Ok(model) => Some(model),
             Err(err) => {
@@ -45,21 +45,24 @@ async fn upsert_manga(user_id: i32, manga: &Model, db: &DatabaseConnection) -> O
     None
 }
 
-fn build_active_model(user_id: i32, manga: &Model, active_item: Option<Model>) -> ActiveModel {
+fn build_active_model(user_id: i32, category: &Model, active_item: Option<Model>) -> ActiveModel {
     let mut model = if active_item.is_none() {
         ActiveModel::new()
     } else {
         ActiveModel::from(active_item.unwrap())
     };
-    model.id = Set(manga.id);
-    model.name = Set(manga.name.to_owned());
+    model.id = Set(category.id);
+    model.name = Set(category.name.to_owned());
+    model.for_item_type = Set(category.for_item_type.to_owned());
+    model.pos = Set(category.pos.to_owned());
+    model.hide = Set(category.hide.to_owned());
     model.user = Set(user_id);
-    model.updated_at = Set(manga.updated_at);
+    model.updated_at = Set(category.updated_at);
     model
 }
 
-/// returns all manga of a specific user
-async fn find_all_manga(user_id: i32, db: &DatabaseConnection) -> Vec<Model> {
+/// returns all categories of a specific user
+async fn find_all_categories(user_id: i32, db: &DatabaseConnection) -> Vec<Model> {
     Entity::find()
         .filter(Column::User.eq(user_id))
         .all(db)

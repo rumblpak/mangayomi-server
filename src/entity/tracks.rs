@@ -21,6 +21,7 @@ pub struct Model {
     pub total_chapter: Option<i32>,
     pub tracking_url: String,
     pub is_manga: Option<i8>,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

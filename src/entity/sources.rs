@@ -35,6 +35,7 @@ pub struct Model {
     pub is_obsolete: Option<i8>,
     pub is_local: Option<i8>,
     pub user: i32,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

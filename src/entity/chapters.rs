@@ -17,6 +17,7 @@ pub struct Model {
     pub last_page_read: String,
     pub archive_path: Option<String>,
     pub manga: i32,
+    pub updated_at: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

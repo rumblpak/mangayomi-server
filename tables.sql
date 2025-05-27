@@ -95,8 +95,16 @@ CREATE TABLE IF NOT EXISTS `categories` (
   `for_item_type` INT NOT NULL,
   `pos` INT NULL,
   `hide` TINYINT NULL,
+  `user` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
+  INDEX `fk_categories_users1_idx` (`user` ASC) VISIBLE,
   INDEX `fk_categories_item_types1_idx` (`for_item_type` ASC) VISIBLE,
+  CONSTRAINT `fk_categories_users1`
+    FOREIGN KEY (`user`)
+    REFERENCES `accounts` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
   CONSTRAINT `fk_categories_item_types1`
     FOREIGN KEY (`for_item_type`)
     REFERENCES `item_types` (`index`)
@@ -121,6 +129,7 @@ CREATE TABLE IF NOT EXISTS `chapters` (
   `last_page_read` VARCHAR(512) NOT NULL,
   `archive_path` VARCHAR(1024) NULL,
   `manga` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_chapters_manga1_idx` (`manga` ASC) VISIBLE,
   CONSTRAINT `fk_chapters_manga1`
@@ -141,6 +150,7 @@ CREATE TABLE IF NOT EXISTS `histories` (
   `date` VARCHAR(512) NOT NULL,
   `chapter` INT NOT NULL,
   `item_type` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_histories_chapters1_idx` (`chapter` ASC) VISIBLE,
   INDEX `fk_histories_item_types1_idx` (`item_type` ASC) VISIBLE,
@@ -191,6 +201,7 @@ CREATE TABLE IF NOT EXISTS `sources` (
   `is_obsolete` TINYINT NULL,
   `is_local` TINYINT NULL,
   `user` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_sources_item_types1_idx` (`item_type` ASC) VISIBLE,
   INDEX `fk_sources_users1_idx` (`user` ASC) VISIBLE,
@@ -239,6 +250,7 @@ CREATE TABLE IF NOT EXISTS `tracks` (
   `total_chapter` INT NULL,
   `tracking_url` VARCHAR(45) NOT NULL,
   `is_manga` TINYINT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_tracks_manga1_idx` (`manga_id` ASC) VISIBLE,
   INDEX `fk_tracks_track_status1_idx` (`track_status_index` ASC) VISIBLE,
@@ -265,6 +277,7 @@ CREATE TABLE IF NOT EXISTS `updates` (
   `chapter_name` VARCHAR(1024) NOT NULL,
   `date` VARCHAR(512) NOT NULL,
   `chapter` INT NOT NULL,
+  `updated_at` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_updates_chapters1_idx` (`chapter` ASC) VISIBLE,
   CONSTRAINT `fk_updates_chapters1`
