@@ -274,3 +274,30 @@ CREATE TABLE IF NOT EXISTS `updates` (
     ON UPDATE NO ACTION);
 
 CREATE INDEX `fk_updates_chapters1_idx` ON `updates` (`chapter` ASC);
+
+INSERT INTO item_types (`index`, name)
+VALUES
+    (0, 'manga'),
+    (1, 'anime'),
+    (2, 'novel');
+
+INSERT INTO status (`index`, name)
+VALUES
+    (0, 'ongoing'),
+    (1, 'completed'),
+    (2, 'canceled'),
+    (3, 'unknown'),
+    (4, 'onHiatus'),
+    (5, 'publishingFinished');
+
+INSERT INTO track_status (`index`, name)
+VALUES
+    (0, 'reading'),
+    (1, 'completed'),
+    (2, 'onHold'),
+    (3, 'dropped'),
+    (4, 'planToRead'),
+    (5, 'reReading'),
+    (6, 'watching'),
+    (7, 'planToWatch'),
+    (8, 'reWatching');
