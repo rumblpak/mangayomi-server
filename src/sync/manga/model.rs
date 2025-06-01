@@ -1,5 +1,63 @@
 use serde::{Deserialize, Serialize};
-use crate::entity::manga::Model as Manga;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Manga {
+    pub id: i32,
+    pub name: String,
+    pub link: String,
+    pub image_url: String,
+    pub description: Option<String>,
+    pub author: Option<String>,
+    pub artist: Option<String>,
+    pub status_index: i32,
+    pub favorite: i8,
+    pub source: String,
+    pub lang: String,
+    pub date_added: i32,
+    pub last_update: Option<i32>,
+    pub last_read: Option<i32>,
+    pub is_local_archive: Option<i8>,
+    pub custom_cover_image: Option<String>,
+    pub custom_cover_from_tracker: Option<String>,
+    pub item_type: i32,
+    pub user: i32,
+    pub genres: Option<String>,
+    pub updated_at: i32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Chapter {
+    pub id: i32,
+    pub name: String,
+    pub url: String,
+    pub date_upload: String,
+    pub scanlator: Option<String>,
+    pub is_bookmarked: i8,
+    pub is_read: i8,
+    pub last_page_read: String,
+    pub archive_path: Option<String>,
+    pub manga: i32,
+    pub updated_at: i32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Track {
+    pub id: i32,
+    pub library_id: i32,
+    pub media_id: i32,
+    pub manga_id: i32,
+    pub score: Option<i32>,
+    pub started_reading_date: Option<i32>,
+    pub finished_reading_date: Option<i32>,
+    pub last_chapter_read: Option<i32>,
+    pub track_status_index: i32,
+    pub sync_id: i32,
+    pub title: String,
+    pub total_chapter: Option<i32>,
+    pub tracking_url: String,
+    pub is_manga: Option<i8>,
+    pub updated_at: i32,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct MangaList {

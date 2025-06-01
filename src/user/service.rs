@@ -1,16 +1,18 @@
 use actix_web::web;
 use argon2::Argon2;
+use mongodb::bson::doc;
+use mongodb::Client;
 use password_hash::rand_core::OsRng;
 use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use sea_orm::ColumnTrait;
-use sea_orm::QueryFilter;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use crate::user::model::User;
 
 /// inserts a new account if it does not exist yet
 pub async fn register_account(
+    db: web::Data<Client>,
     user: &web::Json<crate::user::model::BasicUser>,
-    db: &DatabaseConnection,
-) -> Option<crate::entity::accounts::Model> {
+) -> Option<User> {
+    let collection = db.database("mangayomi").collection("users");
+    let usr = collection.find_one(doc! { "email": &user.email }).await;
     let is_registered: bool = find_account(&user.email, db).await.is_some();
     if !is_registered {
         let salt = SaltString::generate(&mut OsRng);
