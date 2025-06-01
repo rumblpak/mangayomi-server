@@ -1,32 +1,31 @@
+use crate::user::model::User;
 use actix_web::web;
 use argon2::Argon2;
-use mongodb::bson::doc;
 use mongodb::Client;
+use mongodb::bson::doc;
 use password_hash::rand_core::OsRng;
 use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use crate::user::model::User;
 
 /// inserts a new account if it does not exist yet
 pub async fn register_account(
     db: web::Data<Client>,
     user: &web::Json<crate::user::model::BasicUser>,
 ) -> Option<User> {
-    let collection = db.database("mangayomi").collection("users");
-    let usr = collection.find_one(doc! { "email": &user.email }).await;
-    let is_registered: bool = find_account(&user.email, db).await.is_some();
-    if !is_registered {
+    let usr = find_account(&user.email, &db).await;
+    if usr.is_none() {
         let salt = SaltString::generate(&mut OsRng);
         let password_hash = Argon2::default()
             .hash_password(user.password.as_bytes(), &salt)
             .expect("Failed to hash password!");
-        let account = crate::entity::accounts::ActiveModel {
-            email: Set(user.email.to_owned()),
-            password: Set(password_hash.to_string()),
-            salt: Set(salt.to_string()),
-            ..Default::default()
+        let collection = db.database("mangayomi").collection("users");
+        let account = doc! {
+            "email": user.email.to_owned(),
+            "password": password_hash.to_string(),
+            "salt": salt.to_string(),
+            "role": "BASIC",
         };
-        return match account.insert(db).await {
-            Ok(model) => Some(model),
+        return match collection.insert_one(account).await {
+            Ok(_result) => find_account(&user.email, &db).await,
             Err(err) => {
                 log::error!("{}", err);
                 None
@@ -38,10 +37,10 @@ pub async fn register_account(
 
 // returns account if the email and password matches
 pub async fn login_account(
+    db: web::Data<Client>,
     user: &web::Json<crate::user::model::BasicUser>,
-    db: &DatabaseConnection,
-) -> Option<crate::entity::accounts::Model> {
-    let result = find_account(&user.email, db).await;
+) -> Option<User> {
+    let result = find_account(&user.email, &db).await;
     if result.is_some() {
         let account = result.unwrap();
         let hash = PasswordHash::new(&account.password).expect("Failed to hash password!");
@@ -57,13 +56,14 @@ pub async fn login_account(
 }
 
 /// returns an account with the matching email
-async fn find_account(
-    email: &String,
-    db: &DatabaseConnection,
-) -> Option<crate::entity::accounts::Model> {
-    crate::entity::accounts::Entity::find()
-        .filter(crate::entity::accounts::Column::Email.eq(email))
-        .one(db)
-        .await
-        .map_or(None, |account| account)
+async fn find_account(email: &String, db: &Client) -> Option<User> {
+    let collection = db.database("mangayomi").collection("users");
+    match collection.find_one(doc! { "email": email }).await {
+        Ok(Some(user)) => Some(user),
+        Ok(None) => None,
+        Err(err) => {
+            log::error!("{}", err);
+            None
+        }
+    }
 }

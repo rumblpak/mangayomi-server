@@ -6,7 +6,7 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub salt: String,
-    pub roles_id: i32,
+    pub role: String,
     pub created_at: i32,
     pub updated_at: i32,
 }
