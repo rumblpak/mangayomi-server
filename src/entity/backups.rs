@@ -4,30 +4,30 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "updates")]
+#[sea_orm(table_name = "backups")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
+    #[sea_orm(primary_key)]
     pub id: i32,
-    pub chapter_name: String,
-    pub date: String,
-    pub chapter: i32,
+    pub created_at: Option<i32>,
+    pub backup_path: Option<String>,
+    pub user: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::chapters::Entity",
-        from = "Column::Chapter",
-        to = "super::chapters::Column::Id",
+        belongs_to = "super::accounts::Entity",
+        from = "Column::User",
+        to = "super::accounts::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Chapters,
+    Accounts,
 }
 
-impl Related<super::chapters::Entity> for Entity {
+impl Related<super::accounts::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Chapters.def()
+        Relation::Accounts.def()
     }
 }
 

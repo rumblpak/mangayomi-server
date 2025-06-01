@@ -5,15 +5,6 @@ edition = "2024"
 
 [dependencies]
 actix-web = "4"
-sea-orm = { version = "1.1.0", features = [
-    "sqlx-sqlite",
-    "sqlx-mysql",
-    "debug-print",
-    "runtime-async-std-native-tls",
-    "macros",
-    "with-json",
-    "with-uuid",
-] }
 dotenvy = "0.15"
 log = "0.4.27"
 openssl = { version = "0.10", features = ["vendored"] }
@@ -35,3 +26,4 @@ argon2 = "0.5.3"
 secrecy = "0.10.3"
 actix-identity = "0.8.0"
 password-hash = "0.5.0"
+mongodb = "3.2.3"

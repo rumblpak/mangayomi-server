@@ -22,13 +22,13 @@ pub struct Model {
     pub last_update: Option<i32>,
     pub last_read: Option<i32>,
     pub is_local_archive: Option<i8>,
-    #[sea_orm(column_type = "Binary(255)", nullable)]
-    pub custom_cover_image: Option<Vec<u8>>,
+    #[sea_orm(column_type = "custom(\"BINARY(16384)\")", nullable)]
+    pub custom_cover_image: Option<String>,
     pub custom_cover_from_tracker: Option<String>,
     pub item_type: i32,
     pub user: i32,
     pub genres: Option<String>,
-    pub updated_at: i64,
+    pub updated_at: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -41,6 +41,8 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Accounts,
+    #[sea_orm(has_many = "super::categ_manga::Entity")]
+    CategManga,
     #[sea_orm(has_many = "super::chapters::Entity")]
     Chapters,
     #[sea_orm(
@@ -69,6 +71,12 @@ impl Related<super::accounts::Entity> for Entity {
     }
 }
 
+impl Related<super::categ_manga::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::CategManga.def()
+    }
+}
+
 impl Related<super::chapters::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Chapters.def()
@@ -90,6 +98,15 @@ impl Related<super::status::Entity> for Entity {
 impl Related<super::tracks::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Tracks.def()
+    }
+}
+
+impl Related<super::categories::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::categ_manga::Relation::Categories.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::categ_manga::Relation::Manga.def().rev())
     }
 }
 

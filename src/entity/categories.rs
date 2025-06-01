@@ -13,19 +13,11 @@ pub struct Model {
     pub pos: Option<i32>,
     pub hide: Option<i8>,
     pub user: i32,
-    pub updated_at: i64,
+    pub updated_at: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::item_types::Entity",
-        from = "Column::ForItemType",
-        to = "super::item_types::Column::Index",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    ItemTypes,
     #[sea_orm(
         belongs_to = "super::accounts::Entity",
         from = "Column::User",
@@ -34,6 +26,16 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Accounts,
+    #[sea_orm(has_many = "super::categ_manga::Entity")]
+    CategManga,
+    #[sea_orm(
+        belongs_to = "super::item_types::Entity",
+        from = "Column::ForItemType",
+        to = "super::item_types::Column::Index",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    ItemTypes,
 }
 
 impl Related<super::accounts::Entity> for Entity {
@@ -42,9 +44,24 @@ impl Related<super::accounts::Entity> for Entity {
     }
 }
 
+impl Related<super::categ_manga::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::CategManga.def()
+    }
+}
+
 impl Related<super::item_types::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::ItemTypes.def()
+    }
+}
+
+impl Related<super::manga::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::categ_manga::Relation::Manga.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::categ_manga::Relation::Categories.def().rev())
     }
 }
 

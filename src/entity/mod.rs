@@ -3,11 +3,14 @@
 pub mod prelude;
 
 pub mod accounts;
+pub mod backups;
+pub mod categ_manga;
 pub mod categories;
 pub mod chapters;
 pub mod histories;
 pub mod item_types;
 pub mod manga;
+pub mod roles;
 pub mod sources;
 pub mod status;
 pub mod track_status;
