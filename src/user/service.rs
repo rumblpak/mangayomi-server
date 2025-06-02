@@ -18,11 +18,14 @@ pub async fn register_account(
             .hash_password(user.password.as_bytes(), &salt)
             .expect("Failed to hash password!");
         let collection = db.database("mangayomi").collection("users");
-        let account = doc! {
-            "email": user.email.to_owned(),
-            "password": password_hash.to_string(),
-            "salt": salt.to_string(),
-            "role": "BASIC",
+        let account = User {
+            id: None,
+            email: user.email.to_owned(),
+            password: password_hash.to_string(),
+            salt: salt.to_string(),
+            role: "BASIC".to_string(),
+            created_at: 0,
+            updated_at: 0,
         };
         return match collection.insert_one(account).await {
             Ok(_result) => find_account(&user.email, &db).await,

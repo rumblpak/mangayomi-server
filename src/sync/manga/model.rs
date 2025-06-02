@@ -1,8 +1,10 @@
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Manga {
-    pub id: i32,
+    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    pub id: Option<ObjectId>,
     pub name: String,
     pub link: String,
     pub image_url: String,
@@ -27,7 +29,8 @@ pub struct Manga {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Chapter {
-    pub id: i32,
+    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    pub id: Option<ObjectId>,
     pub name: String,
     pub url: String,
     pub date_upload: String,
@@ -42,7 +45,8 @@ pub struct Chapter {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Track {
-    pub id: i32,
+    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    pub id: Option<ObjectId>,
     pub library_id: i32,
     pub media_id: i32,
     pub manga_id: i32,

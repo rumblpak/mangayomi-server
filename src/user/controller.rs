@@ -22,7 +22,7 @@ async fn login(request: HttpRequest, client: web::Data<Client>, user: web::Json<
     let result = login_account(client, &user);
     match result.await {
         Some(account) => {
-            Identity::login(&request.extensions(), account.id.to_string())?;
+            Identity::login(&request.extensions(), account.id.unwrap().to_string())?;
             Ok(format!("Welcome {}!", account.email))
         }
         None => Ok(format!("Account not found {}!", user.email)),

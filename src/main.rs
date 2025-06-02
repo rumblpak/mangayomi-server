@@ -10,7 +10,7 @@ use mongodb::Client;
 mod db;
 mod globals;
 mod user;
-mod sync;
+//mod sync;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -79,8 +79,8 @@ async fn main() -> std::io::Result<()> {
             .service(user::controller::logout)
             .service(user::controller::home)
             .service(user::controller::unprotected)
-            .service(sync::manga::controller::sync_manga)
-            .service(sync::category::controller::sync_category)
+            //.service(sync::manga::controller::sync_manga)
+            //.service(sync::category::controller::sync_category)
             .default_service(web::to(|| HttpResponse::NotFound()))
     })
     .bind(format!("{}:{}", host, port))?
