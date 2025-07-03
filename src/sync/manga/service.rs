@@ -1,85 +1,114 @@
-use crate::entity::manga::{ActiveModel, Column, Entity, Model};
-use sea_orm::QueryFilter;
-use sea_orm::{ActiveModelBehavior, ActiveModelTrait, ColumnTrait, Set};
-use sea_orm::{DatabaseConnection, EntityTrait};
+use crate::sync::manga::model::{MangaList, Model};
+use actix_web::web;
+use futures::TryStreamExt;
+use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, to_document};
+use mongodb::options::{UpdateOneModel, WriteModel};
+use mongodb::{Client, Collection, Namespace};
+use serde::de::DeserializeOwned;
 
-/// returns an account with the matching email
 pub async fn sync_manga_list(
-    user_id: i32,
-    manga_list: &Vec<Model>,
-    db: &DatabaseConnection,
-) -> Vec<Model> {
-    for manga in manga_list {
-        upsert_manga(user_id, manga, db).await;
+    user_id: ObjectId,
+    manga_list: &web::Json<MangaList>,
+    db: web::Data<Client>,
+) -> MangaList {
+    let col_categories = db.database("mangayomi").collection("categories");
+    let col_manga = db.database("mangayomi").collection("manga");
+    let col_chapter = db.database("mangayomi").collection("chapters");
+    let col_track = db.database("mangayomi").collection("tracks");
+
+    upsert(
+        &db,
+        col_categories.namespace(),
+        user_id,
+        &manga_list.categories,
+    )
+    .await;
+    upsert(&db, col_manga.namespace(), user_id, &manga_list.manga).await;
+    upsert(&db, col_chapter.namespace(), user_id, &manga_list.chapters).await;
+    upsert(&db, col_track.namespace(), user_id, &manga_list.tracks).await;
+
+    delete_many(&col_manga, user_id, &manga_list.deleted_categories).await;
+    delete_many(&col_manga, user_id, &manga_list.deleted_manga).await;
+    delete_many(&col_chapter, user_id, &manga_list.deleted_chapters).await;
+    delete_many(&col_track, user_id, &manga_list.deleted_tracks).await;
+
+    MangaList {
+        categories: find_all(&col_categories, user_id).await,
+        manga: find_all(&col_manga, user_id).await,
+        chapters: find_all(&col_chapter, user_id).await,
+        tracks: find_all(&col_track, user_id).await,
+        deleted_categories: vec![],
+        deleted_manga: vec![],
+        deleted_chapters: vec![],
+        deleted_tracks: vec![],
     }
-    find_all_manga(user_id, db).await
 }
 
-/// returns an account with the matching email
-async fn upsert_manga(user_id: i32, manga: &Model, db: &DatabaseConnection) -> Option<Model> {
-    let item = Entity::find()
-        .filter(Column::User.eq(user_id).and(Column::Id.eq(manga.id)))
-        .one(db)
-        .await
-        .map_or(None, |manga| manga);
-    if item.is_none() {
-        let active_item = build_active_model(user_id, manga, None);
-        return match active_item.insert(db).await {
-            Ok(model) => Some(model),
-            Err(err) => {
-                log::error!("{}", err);
-                None
-            }
-        };
+async fn delete_many<T: Send + Sync>(
+    collection: &Collection<T>,
+    user_id: ObjectId,
+    ids: &Vec<i32>,
+) {
+    if ids.is_empty() {
+        return;
     }
-    if item.clone().unwrap().updated_at < manga.updated_at {
-        let active_item = build_active_model(user_id, manga, item);
-        return match active_item.update(db).await {
-            Ok(model) => Some(model),
-            Err(err) => {
-                log::error!("{}", err);
-                None
-            }
-        };
+    let del_tracks_result = collection
+        .delete_many(doc! {
+            "id": doc! {
+                "$in": ids
+            },
+            "user": user_id,
+        })
+        .await;
+    match del_tracks_result {
+        Ok(result) => log::info!("Deleted {} {}.", result.deleted_count, collection.name()),
+        Err(_) => log::error!("Failed to delete {}.", collection.name()),
     }
-    None
 }
 
-fn build_active_model(user_id: i32, manga: &Model, active_item: Option<Model>) -> ActiveModel {
-    let mut model = if active_item.is_none() {
-        ActiveModel::new()
-    } else {
-        ActiveModel::from(active_item.unwrap())
-    };
-    model.id = Set(manga.id);
-    model.name = Set(manga.name.to_owned());
-    model.artist = Set(manga.artist.to_owned());
-    model.author = Set(manga.author.to_owned());
-    model.custom_cover_from_tracker = Set(manga.custom_cover_from_tracker.to_owned());
-    model.custom_cover_image = Set(manga.custom_cover_image.to_owned());
-    model.date_added = Set(manga.date_added.to_owned());
-    model.description = Set(manga.description.to_owned());
-    model.favorite = Set(manga.favorite.to_owned());
-    model.genres = Set(manga.genres.to_owned());
-    model.image_url = Set(manga.image_url.to_owned());
-    model.is_local_archive = Set(manga.is_local_archive.to_owned());
-    model.item_type = Set(manga.item_type.to_owned());
-    model.lang = Set(manga.lang.to_owned());
-    model.last_read = Set(manga.last_read.to_owned());
-    model.last_update = Set(manga.last_update.to_owned());
-    model.link = Set(manga.link.to_owned());
-    model.source = Set(manga.source.to_owned());
-    model.status_index = Set(manga.status_index.to_owned());
-    model.user = Set(user_id);
-    model.updated_at = Set(manga.updated_at);
-    model
+async fn upsert<T: Send + Sync + serde::Serialize + Model>(
+    db: &web::Data<Client>,
+    namespace: Namespace,
+    user_id: ObjectId,
+    items: &Vec<T>,
+) {
+    let mut ops = vec![];
+    for item in items {
+        let mut doc = to_document(&item).unwrap();
+        doc.insert("user", user_id);
+        ops.push(WriteModel::UpdateOne(
+            UpdateOneModel::builder()
+                .namespace(namespace.to_owned())
+                .filter(doc! {
+                    "id": item.get_id(),
+                    "user": user_id,
+                    "updatedAt": { "$lt": item.get_updated_at() },
+                })
+                .update(doc! {
+                    "$set": doc
+                })
+                .upsert(true)
+                .build(),
+        ));
+    }
+    if !ops.is_empty() {
+        match db.bulk_write(ops).ordered(false).await {
+            Ok(result) => log::info!("Upserted {} {}.", result.modified_count, namespace.coll),
+            Err(_) => {},
+        }
+    }
 }
 
-/// returns all manga of a specific user
-async fn find_all_manga(user_id: i32, db: &DatabaseConnection) -> Vec<Model> {
-    Entity::find()
-        .filter(Column::User.eq(user_id))
-        .all(db)
-        .await
-        .unwrap()
+async fn find_all<T: DeserializeOwned + Unpin + Send + Sync>(
+    collection: &Collection<T>,
+    user_id: ObjectId,
+) -> Vec<T> {
+    match collection.find(doc! { "user": user_id }).await {
+        Ok(result) => result.try_collect().await.unwrap(),
+        Err(err) => {
+            log::error!("{}", err);
+            vec![]
+        }
+    }
 }

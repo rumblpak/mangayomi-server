@@ -4,9 +4,18 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct History {
     #[serde(rename="_id", skip_serializing_if="Option::is_none")]
-    pub id: Option<ObjectId>,
+    pub oid: Option<ObjectId>,
+    pub id: i32,
     pub date: String,
     pub chapter: i32,
     pub item_type: i32,
-    pub updated_at: i32,
+    pub user: Option<ObjectId>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct HistoryList {
+    pub histories: Vec<History>,
+    pub deleted_histories: Vec<i32>,
 }

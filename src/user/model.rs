@@ -9,17 +9,17 @@ pub struct User {
     pub password: String,
     pub salt: String,
     pub role: String,
-    pub created_at: i32,
-    pub updated_at: i32,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Backup {
     #[serde(rename="_id", skip_serializing_if="Option::is_none")]
     pub id: Option<ObjectId>,
-    pub created_at: Option<i32>,
-    pub backup_path: Option<String>,
-    pub user: i32,
+    pub backup_path: String,
+    pub user: Option<ObjectId>,
+    pub created_at: i64,
 }
 
 #[derive(Deserialize)]

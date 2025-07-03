@@ -5,6 +5,7 @@ use mongodb::Client;
 use mongodb::bson::doc;
 use password_hash::rand_core::OsRng;
 use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// inserts a new account if it does not exist yet
 pub async fn register_account(
@@ -18,14 +19,21 @@ pub async fn register_account(
             .hash_password(user.password.as_bytes(), &salt)
             .expect("Failed to hash password!");
         let collection = db.database("mangayomi").collection("users");
+        let timestamp = i64::try_from(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis(),
+        )
+        .unwrap();
         let account = User {
             id: None,
             email: user.email.to_owned(),
             password: password_hash.to_string(),
             salt: salt.to_string(),
             role: "BASIC".to_string(),
-            created_at: 0,
-            updated_at: 0,
+            created_at: timestamp,
+            updated_at: timestamp,
         };
         return match collection.insert_one(account).await {
             Ok(_result) => find_account(&user.email, &db).await,

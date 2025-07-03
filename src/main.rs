@@ -1,3 +1,6 @@
+use crate::sync::history::model::History;
+use crate::sync::manga::model::{Category, Chapter, Manga, Track};
+use crate::sync::update::model::Update;
 use actix_identity::IdentityMiddleware;
 use actix_session::SessionMiddleware;
 use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
@@ -5,12 +8,14 @@ use actix_session::storage::CookieSessionStore;
 use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{App, HttpResponse, HttpServer, cookie::time::Duration as CookieDuration, web};
-use mongodb::Client;
+use mongodb::bson::doc;
+use mongodb::options::IndexOptions;
+use mongodb::{Client, IndexModel};
 
 mod db;
 mod globals;
+mod sync;
 mod user;
-//mod sync;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,12 +36,49 @@ async fn main() -> std::io::Result<()> {
     log::info!("Connecting to {}:{}...", db_url, host);
 
     db::CONN
-        .get_or_init(|| async {
-            Client::with_uri_str(db_url).await.unwrap()
-        })
+        .get_or_init(|| async { Client::with_uri_str(db_url).await.unwrap() })
         .await;
 
     let conn = db::CONN.get().unwrap();
+
+    let col_categories: mongodb::Collection<Category> =
+        conn.database("mangayomi").collection("categories");
+    let col_manga: mongodb::Collection<Manga> = conn.database("mangayomi").collection("manga");
+    let col_chapter: mongodb::Collection<Chapter> =
+        conn.database("mangayomi").collection("chapters");
+    let col_track: mongodb::Collection<Track> = conn.database("mangayomi").collection("tracks");
+    let col_histories: mongodb::Collection<History> =
+        conn.database("mangayomi").collection("histories");
+    let col_updates: mongodb::Collection<Update> = conn.database("mangayomi").collection("updates");
+    let opts = IndexOptions::builder().unique(true).build();
+    let idx = IndexModel::builder()
+        .keys(doc! { "id": -1, "user": -1 })
+        .options(opts)
+        .build();
+    match col_categories.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created categories index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create categories index."),
+    };
+    match col_manga.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created manga index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create manga index."),
+    };
+    match col_chapter.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created chapters index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create chapters index."),
+    };
+    match col_track.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created tracks index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create tracks index."),
+    };
+    match col_histories.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created histories index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create histories index."),
+    };
+    match col_updates.create_index(idx.clone()).await {
+        Ok(result) => log::info!("Created updates index: {}", result.index_name),
+        Err(_) => log::info!("Failed to create updates index."),
+    };
 
     /*
     if *globals::USE_REDIS {
@@ -79,8 +121,9 @@ async fn main() -> std::io::Result<()> {
             .service(user::controller::logout)
             .service(user::controller::home)
             .service(user::controller::unprotected)
-            //.service(sync::manga::controller::sync_manga)
-            //.service(sync::category::controller::sync_category)
+            .service(sync::manga::controller::sync_manga)
+            .service(sync::history::controller::sync_histories)
+            .service(sync::update::controller::sync_updates)
             .default_service(web::to(|| HttpResponse::NotFound()))
     })
     .bind(format!("{}:{}", host, port))?

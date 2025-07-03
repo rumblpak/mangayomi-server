@@ -1,4 +1,3 @@
-use crate::db;
 use crate::user::model::BasicUser;
 use crate::user::service::{login_account, register_account};
 use actix_http::HttpMessage;

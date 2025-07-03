@@ -1,17 +1,17 @@
-use crate::db;
-use crate::sync::manga::model::MangaList;
-use crate::sync::manga::service::sync_manga_list;
+use crate::sync::update::model::UpdateList;
+use crate::sync::update::service::sync_update_list;
 use actix_identity::Identity;
 use actix_web::{HttpResponse, Responder, post, web};
+use mongodb::Client;
+use mongodb::bson::oid::ObjectId;
 
-#[post("/manga")]
-async fn sync_manga(user: Identity, manga_list: web::Json<MangaList>) -> impl Responder {
-    let result = sync_manga_list(
-        (&user.id().unwrap()).parse().unwrap(),
-        &manga_list.manga,
-        db::CONN.get().unwrap(),
-    );
-    HttpResponse::Ok().json(MangaList {
-        manga: result.await,
-    })
+#[post("/updates")]
+async fn sync_updates(
+    client: web::Data<Client>,
+    user: Identity,
+    update_list: web::Json<UpdateList>,
+) -> impl Responder {
+    let user_id = ObjectId::parse_str(&user.id().unwrap()).unwrap();
+    let result = sync_update_list(user_id, &update_list, client);
+    HttpResponse::Ok().json(result.await)
 }
