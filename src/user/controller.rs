@@ -40,9 +40,3 @@ async fn logout(user: Identity) -> Result<String> {
 async fn home(user: Identity) -> Result<String> {
     Ok(format!("Welcome {}!", user.id()?))
 }
-
-/// logout from session
-#[get("/unprotected")]
-async fn unprotected() -> Result<String> {
-    Ok("Test".to_owned())
-}

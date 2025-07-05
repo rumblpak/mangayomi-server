@@ -1,13 +1,17 @@
 use crate::sync::history::model::History;
 use crate::sync::manga::model::{Category, Chapter, Manga, Track};
 use crate::sync::update::model::Update;
+use actix_governor::governor::middleware::NoOpMiddleware;
+use actix_governor::{Governor, GovernorConfig, GovernorConfigBuilder, PeerIpKeyExtractor};
 use actix_identity::IdentityMiddleware;
 use actix_session::SessionMiddleware;
 use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
 use actix_session::storage::CookieSessionStore;
 use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
-use actix_web::{App, HttpResponse, HttpServer, cookie::time::Duration as CookieDuration, web};
+use actix_web::{
+    App, HttpResponse, HttpServer, Scope, cookie::time::Duration as CookieDuration, web,
+};
 use mongodb::bson::doc;
 use mongodb::options::IndexOptions;
 use mongodb::{Client, IndexModel};
@@ -30,8 +34,13 @@ async fn main() -> std::io::Result<()> {
     let port = globals::PORT.as_str();
     let session_ttl = &globals::SESSION_TTL;
     // let redis_url = globals::REDIS_URL.as_str();
-
-    let secret_key = Key::generate();
+    let key = &globals::SECRET_KEY;
+    let secret_key = if key.len() < 64 {
+        log::info!("Generated a random key because SECRET_KEY is not set in .env");
+        Key::generate()
+    } else {
+        Key::from(key.as_bytes())
+    };
 
     log::info!("Connecting to {}:{}...", db_url, host);
 
@@ -41,6 +50,74 @@ async fn main() -> std::io::Result<()> {
 
     let conn = db::CONN.get().unwrap();
 
+    init_db_indexes(conn).await;
+
+    /*
+    if *globals::USE_REDIS {
+                let redis_store = RedisSessionStore::new(redis_url)
+                    .await
+                    .unwrap();
+                SessionMiddleware::new(
+                    redis_store.clone(),
+                    secret_key.clone(),
+                )
+            } else {
+                SessionMiddleware::new(
+                    CookieSessionStore::default(),
+                    secret_key.clone(),
+                )
+            }
+     */
+
+    HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .wrap(NormalizePath::trim())
+            .wrap(IdentityMiddleware::default())
+            .wrap(Governor::new(&rate_limiter()))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .session_lifecycle(
+                        PersistentSession::default()
+                            .session_ttl(CookieDuration::days(**session_ttl))
+                            .session_ttl_extension_policy(TtlExtensionPolicy::OnEveryRequest),
+                    )
+                    .cookie_secure(true)
+                    .cookie_same_site(SameSite::Strict)
+                    .cookie_content_security(CookieContentSecurity::Private)
+                    .cookie_http_only(true)
+                    .build(),
+            )
+            .app_data(web::Data::new(conn.clone()))
+            .service(user::controller::register)
+            .service(user::controller::login)
+            .service(user::controller::logout)
+            .service(user::controller::home)
+            .service(sync_controller())
+            .default_service(web::to(|| HttpResponse::NotFound()))
+    })
+    .bind(format!("{}:{}", host, port))?
+    .run()
+    .await
+}
+
+fn sync_controller() -> Scope {
+    web::scope("/sync")
+        .app_data(web::JsonConfig::default().limit(250 << 20))
+        .service(sync::manga::controller::sync_manga)
+        .service(sync::history::controller::sync_histories)
+        .service(sync::update::controller::sync_updates)
+}
+
+fn rate_limiter() -> GovernorConfig<PeerIpKeyExtractor, NoOpMiddleware> {
+    GovernorConfigBuilder::default()
+        .const_requests_per_minute(30)
+        .burst_size(15)
+        .finish()
+        .unwrap()
+}
+
+async fn init_db_indexes(conn: &Client) {
     let col_categories: mongodb::Collection<Category> =
         conn.database("mangayomi").collection("categories");
     let col_manga: mongodb::Collection<Manga> = conn.database("mangayomi").collection("manga");
@@ -79,54 +156,4 @@ async fn main() -> std::io::Result<()> {
         Ok(result) => log::info!("Created updates index: {}", result.index_name),
         Err(_) => log::info!("Failed to create updates index."),
     };
-
-    /*
-    if *globals::USE_REDIS {
-                let redis_store = RedisSessionStore::new(redis_url)
-                    .await
-                    .unwrap();
-                SessionMiddleware::new(
-                    redis_store.clone(),
-                    secret_key.clone(),
-                )
-            } else {
-                SessionMiddleware::new(
-                    CookieSessionStore::default(),
-                    secret_key.clone(),
-                )
-            }
-     */
-
-    HttpServer::new(move || {
-        App::new()
-            .wrap(Logger::default())
-            .wrap(NormalizePath::trim())
-            .wrap(IdentityMiddleware::default())
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .session_lifecycle(
-                        PersistentSession::default()
-                            .session_ttl(CookieDuration::days(**session_ttl))
-                            .session_ttl_extension_policy(TtlExtensionPolicy::OnEveryRequest),
-                    )
-                    .cookie_secure(true)
-                    .cookie_same_site(SameSite::Strict)
-                    .cookie_content_security(CookieContentSecurity::Private)
-                    .cookie_http_only(true)
-                    .build(),
-            )
-            .app_data(web::Data::new(conn.clone()))
-            .service(user::controller::register)
-            .service(user::controller::login)
-            .service(user::controller::logout)
-            .service(user::controller::home)
-            .service(user::controller::unprotected)
-            .service(sync::manga::controller::sync_manga)
-            .service(sync::history::controller::sync_histories)
-            .service(sync::update::controller::sync_updates)
-            .default_service(web::to(|| HttpResponse::NotFound()))
-    })
-    .bind(format!("{}:{}", host, port))?
-    .run()
-    .await
 }

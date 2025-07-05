@@ -8,6 +8,7 @@ services:
       - DATABASE_URL=mongodb://${DATABASE_USER}:${DATABASE_PASSWORD}@database/
       - HOST=${HOST}
       - PORT=${PORT}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       database:
         condition: service_healthy

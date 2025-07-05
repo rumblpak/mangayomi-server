@@ -14,4 +14,5 @@ lazy_static! {
     pub static ref USE_REDIS: bool = env::var("USE_REDIS").unwrap_or("false".to_string()).parse().expect("USE_REDIS is not set");
     /// The redis connection string this server will use
     pub static ref REDIS_URL: String = env::var("REDIS_URL").unwrap_or("redis://127.0.0.1:6379".to_string());
+    pub static ref SECRET_KEY: String = env::var("SECRET_KEY").unwrap_or("".to_string());
 }

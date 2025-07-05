@@ -12,6 +12,9 @@ pub async fn register_account(
     db: web::Data<Client>,
     user: &web::Json<crate::user::model::BasicUser>,
 ) -> Option<User> {
+    if user.password.chars().count() < 8 {
+        return None;
+    }
     let usr = find_account(&user.email, &db).await;
     if usr.is_none() {
         let salt = SaltString::generate(&mut OsRng);

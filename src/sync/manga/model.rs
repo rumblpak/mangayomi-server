@@ -8,7 +8,7 @@ pub trait Model {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Category {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "_id", skip_serializing)]
     pub oid: Option<ObjectId>,
     pub id: i32,
     pub name: String,
@@ -16,6 +16,7 @@ pub struct Category {
     pub for_item_type: i32,
     pub pos: Option<i32>,
     pub hide: Option<bool>,
+    #[serde(skip_serializing)]
     pub user: Option<ObjectId>,
     #[serde(rename = "updatedAt")]
     pub updated_at: i64,
@@ -32,7 +33,7 @@ impl Model for Category {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Manga {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "_id", skip_serializing)]
     pub oid: Option<ObjectId>,
     pub id: i32,
     pub name: String,
@@ -47,7 +48,7 @@ pub struct Manga {
     pub source: String,
     pub lang: String,
     #[serde(rename = "dateAdded")]
-    pub date_added: i64,
+    pub date_added: Option<i64>,
     #[serde(rename = "lastUpdate")]
     pub last_update: Option<i64>,
     #[serde(rename = "lastRead")]
@@ -60,7 +61,9 @@ pub struct Manga {
     pub custom_cover_from_tracker: Option<String>,
     #[serde(rename = "itemType")]
     pub item_type: i32,
-    pub genres: Option<String>,
+    pub genre: Option<Vec<String>>,
+    pub categories: Option<Vec<i32>>,
+    #[serde(skip_serializing)]
     pub user: Option<ObjectId>,
     #[serde(rename = "updatedAt")]
     pub updated_at: i64,
@@ -77,18 +80,25 @@ impl Model for Manga {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Chapter {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "_id", skip_serializing)]
     pub oid: Option<ObjectId>,
     pub id: i32,
     pub name: String,
     pub url: String,
-    pub date_upload: String,
+    #[serde(rename = "dateUpload")]
+    pub date_upload: Option<String>,
     pub scanlator: Option<String>,
+    #[serde(rename = "isBookmarked")]
     pub is_bookmarked: bool,
+    #[serde(rename = "isRead")]
     pub is_read: bool,
-    pub last_page_read: String,
+    #[serde(rename = "lastPageRead")]
+    pub last_page_read: Option<String>,
+    #[serde(rename = "archivePath")]
     pub archive_path: Option<String>,
-    pub manga: i32,
+    #[serde(rename = "mangaId")]
+    pub manga_id: i32,
+    #[serde(skip_serializing)]
     pub user: Option<ObjectId>,
     #[serde(rename = "updatedAt")]
     pub updated_at: i64,
@@ -105,22 +115,33 @@ impl Model for Chapter {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Track {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "_id", skip_serializing)]
     pub oid: Option<ObjectId>,
     pub id: i32,
+    #[serde(rename = "libraryId")]
     pub library_id: i32,
+    #[serde(rename = "mediaId")]
     pub media_id: i32,
+    #[serde(rename = "mangaId")]
     pub manga_id: i32,
     pub score: Option<i32>,
+    #[serde(rename = "startedReadingDate")]
     pub started_reading_date: Option<i64>,
+    #[serde(rename = "finishedReadingDate")]
     pub finished_reading_date: Option<i64>,
+    #[serde(rename = "lastChapterRead")]
     pub last_chapter_read: Option<i32>,
-    pub track_status_index: i32,
+    pub status: i32,
+    #[serde(rename = "syncId")]
     pub sync_id: i32,
     pub title: String,
+    #[serde(rename = "totalChapter")]
     pub total_chapter: Option<i32>,
+    #[serde(rename = "trackingUrl")]
     pub tracking_url: String,
+    #[serde(rename = "isManga")]
     pub is_manga: Option<bool>,
+    #[serde(skip_serializing)]
     pub user: Option<ObjectId>,
     #[serde(rename = "updatedAt")]
     pub updated_at: i64,
