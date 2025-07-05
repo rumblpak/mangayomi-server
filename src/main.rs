@@ -13,8 +13,9 @@ use actix_web::{
     App, HttpResponse, HttpServer, Scope, cookie::time::Duration as CookieDuration, web,
 };
 use mongodb::bson::doc;
-use mongodb::options::IndexOptions;
+use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::{Client, IndexModel};
+use tera::Tera;
 
 mod db;
 mod globals;
@@ -45,8 +46,21 @@ async fn main() -> std::io::Result<()> {
     log::info!("Connecting to {}:{}...", db_url, host);
 
     db::CONN
-        .get_or_init(|| async { Client::with_uri_str(db_url).await.unwrap() })
+        .get_or_init(|| async {
+            let mut client_options = ClientOptions::parse(db_url).await.unwrap();
+            client_options.max_connecting = Some(20);
+            client_options.min_pool_size = Some(1);
+            Client::with_options(client_options).unwrap()
+        })
         .await;
+    let mut tera = match Tera::new("./resources/templates/**/*.html") {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Parsing error(s): {}", e);
+            ::std::process::exit(1);
+        }
+    };
+    tera.autoescape_on(vec![".html"]);
 
     let conn = db::CONN.get().unwrap();
 
@@ -88,7 +102,9 @@ async fn main() -> std::io::Result<()> {
                     .cookie_http_only(true)
                     .build(),
             )
+            .app_data(web::Data::new(tera.clone()))
             .app_data(web::Data::new(conn.clone()))
+            .service(actix_files::Files::new("/assets", "./resources/assets"))
             .service(user::controller::register)
             .service(user::controller::login)
             .service(user::controller::logout)

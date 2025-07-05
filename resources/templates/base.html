@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Mangayomi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
+    <link rel="stylesheet" type="text/css" href="/assets/bulma.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+    <link rel="stylesheet" href="/assets/css/fontawesome.css"/>
+    <link rel="stylesheet" href="/assets/css/brands.css"/>
+    <link rel="stylesheet" href="/assets/css/solid.css"/>
+</head>
+
+<body>
+<section class="hero is-fullheight">
+    <div class="hero-head">
+        <header class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item">
+                        <img src="/assets/favicon.png" class="image" alt="Logo"/>
+                        <p class="is-size-1 app-bar-title">Mangayomi</p>
+                    </a>
+                    <span class="navbar-burger" data-target="navbarMenuHeroC">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+                </div>
+                <div id="navbarMenuHeroC" class="navbar-menu">
+                    <div class="navbar-end">
+                        <a class="navbar-item is-active">Home</a>
+                        <span class="navbar-item">
+                            <a class="button is-success is-inverted"
+                               href="https://github.com/kodjodevf/mangayomi/releases/latest"
+                               target="_blank" rel="noopener">
+                                <span class="icon">
+                                    <i class="fab fa-github"></i>
+                                </span>
+                                <span>Download</span>
+                            </a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <div class="hero-body">
+        <div class="container has-text-centered">
+            {% block content %} {% endblock content %}
+        </div>
+    </div>
+
+    <div class="hero-foot mb-3">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Sync Server</strong> for <a href="https://github.com/kodjodevf/mangayomi" target="_blank"
+                                                    rel="noopener">Mangayomi</a>.
+                See source code at
+                <a href="https://github.com/Schnitzel5/mangayomi-server" target="_blank" rel="noopener">
+                    <span class="icon">
+                        <i class="fab fa-github"></i>
+                    </span>
+                    <span>GitHub</span>
+                </a>.
+                <br>
+                Join us on
+                <a href="https://discord.com/invite/EjfBuYahsP" target="_blank" rel="noopener">
+                    <span class="icon">
+                        <i class="fab fa-discord"></i>
+                    </span>
+                    <span>Discord</span>
+                </a>.
+            </p>
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript" src="/assets/htmx.min.js"></script>
+<script type="text/javascript" src="/assets/json-enc.js"></script>
+{% block js_script %} {% endblock js_script %}
+</body>
+</html>

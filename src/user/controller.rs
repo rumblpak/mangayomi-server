@@ -2,12 +2,20 @@ use crate::user::model::BasicUser;
 use crate::user::service::{login_account, register_account};
 use actix_http::HttpMessage;
 use actix_identity::Identity;
-use actix_web::{HttpRequest, Result, get, post, web};
+use actix_web::error::ErrorBadRequest;
+use actix_web::web::Data;
+use actix_web::{HttpRequest, HttpResponse, Responder, Result, get, post, web};
 use mongodb::Client;
+use tera::{Context, Tera};
+use validator::Validate;
 
 /// register a new account with the given email and password
 #[post("/register")]
-async fn register(client: web::Data<Client>, user: web::Json<BasicUser>) -> Result<String> {
+async fn register(client: Data<Client>, user: web::Json<BasicUser>) -> Result<String> {
+    let is_valid = user.validate();
+    if is_valid.is_err() {
+        return Err(ErrorBadRequest("Username or password is invalid!"));
+    }
     let result = register_account(client, &user);
     match result.await {
         Some(_account) => Ok("Account registered!".to_owned()),
@@ -17,7 +25,15 @@ async fn register(client: web::Data<Client>, user: web::Json<BasicUser>) -> Resu
 
 /// login into the session
 #[post("/login")]
-async fn login(request: HttpRequest, client: web::Data<Client>, user: web::Json<BasicUser>) -> Result<String> {
+async fn login(
+    request: HttpRequest,
+    client: Data<Client>,
+    user: web::Json<BasicUser>,
+) -> Result<String> {
+    let is_valid = user.validate();
+    if is_valid.is_err() {
+        return Err(ErrorBadRequest("Username or password is invalid!"));
+    }
     let result = login_account(client, &user);
     match result.await {
         Some(account) => {
@@ -37,6 +53,7 @@ async fn logout(user: Identity) -> Result<String> {
 
 /// logout from session
 #[get("/")]
-async fn home(user: Identity) -> Result<String> {
-    Ok(format!("Welcome {}!", user.id()?))
+async fn home(tera: Data<Tera>) -> impl Responder {
+    let ctx = Context::new();
+    HttpResponse::Ok().body(tera.render("register.html", &ctx).unwrap())
 }

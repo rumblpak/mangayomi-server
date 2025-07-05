@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div id="content">
+    <p class="is-size-1 has-text-centered mb-5">Register Account</p>
+    <form hx-post="/register" hx-ext="json-enc" hx-vals='js:{
+        "email": email,
+        "password": password
+    }' hx-target="#content" hx-swap="innerHTML">
+        <div class="field">
+            <p class="control has-icons-left has-icons-right">
+                <input class="input is-danger" type="email" placeholder="Email" id="register-email"/>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-envelope"></i>
+                </span>
+                <span class="icon is-small is-right">
+                    <i id="register-email-icon" class="fas fa-exclamation-triangle"></i>
+                </span>
+            </p>
+            <p id="register-email-hint" class="help is-danger">This email is invalid!</p>
+        </div>
+        <div class="field">
+            <p class="control has-icons-left has-icons-right">
+                <input class="input is-danger" type="password" placeholder="Password" minlength="8"
+                       id="register-password"/>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                </span>
+                <span class="icon is-small is-right">
+                    <i id="register-password-icon" class="fas fa-exclamation-triangle"></i>
+                </span>
+            </p>
+            <p id="register-password-hint" class="help is-danger">This password is invalid!</p>
+        </div>
+        <button class="button is-primary is-dark mt-3" type="submit" id="register-submit" disabled>
+            <span class="icon">
+                <i class="fa-solid fa-arrow-right"></i>
+            </span>
+            <span>Register</span>
+        </button>
+    </form>
+</div>
+
+{% endblock content %}
+
+{% block js_script %}
+<script type="text/javascript">
+    let email = "";
+    let password = "";
+    const regEmail = document.getElementById("register-email");
+    const regEmailIcon = document.getElementById("register-email-icon");
+    const regEmailHint = document.getElementById("register-email-hint");
+    const regPassword = document.getElementById("register-password");
+    const regPasswordIcon = document.getElementById("register-password-icon");
+    const regPasswordHint = document.getElementById("register-password-hint");
+    const regSubmit = document.getElementById("register-submit");
+    regEmail.addEventListener("change", (e) => {
+        if (_checkEmail(e.target.value)) {
+            regEmail.classList.remove("is-danger");
+            regEmail.classList.add("is-success");
+            regEmailIcon.classList.remove("fa-exclamation-triangle");
+            regEmailIcon.classList.add("fa-check");
+            regEmailHint.innerText = "";
+        } else {
+            regEmail.classList.remove("is-success");
+            regEmail.classList.add("is-danger");
+            regEmailIcon.classList.remove("fa-check");
+            regEmailIcon.classList.add("fa-exclamation-triangle");
+            regEmailHint.innerText = "This email is invalid!";
+        }
+        regSubmit.disabled = _checkForm(e.target.value, regPassword.value) ? "" : "true";
+        email = e.target.value;
+    });
+    regPassword.addEventListener("change", (e) => {
+        if (_checkPassword(e.target.value)) {
+            regPassword.classList.remove("is-danger");
+            regPassword.classList.add("is-success");
+            regPasswordIcon.classList.remove("fa-exclamation-triangle");
+            regPasswordIcon.classList.add("fa-check");
+            regPasswordHint.innerText = "";
+        } else {
+            regPassword.classList.remove("is-success");
+            regPassword.classList.add("is-danger");
+            regPasswordIcon.classList.remove("fa-check");
+            regPasswordIcon.classList.add("fa-exclamation-triangle");
+            regPasswordHint.innerText = "This password is invalid!";
+        }
+        console.log(regEmail.value + "\t" + e.target.value);
+        regSubmit.disabled = _checkForm(regEmail.value, e.target.value) ? "" : "true";
+        password = e.target.value;
+    });
+
+    function _checkForm(email, password) {
+        return _checkEmail(email) && _checkPassword(password);
+    }
+
+    function _checkEmail(val) {
+        return val.toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    }
+
+    function _checkPassword(val) {
+        return val.toLowerCase()
+            .match(
+                /^.{8,}$/
+            );
+    }
+</script>
+{% endblock js_script %}

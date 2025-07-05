@@ -1,9 +1,10 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct User {
-    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub email: String,
     pub password: String,
@@ -15,15 +16,17 @@ pub struct User {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Backup {
-    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub backup_path: String,
     pub user: Option<ObjectId>,
     pub created_at: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct BasicUser {
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 8, message = "Password must be at least 8 characters long!"))]
     pub(crate) password: String,
 }

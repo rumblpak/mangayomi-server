@@ -119,7 +119,7 @@ pub struct Track {
     pub oid: Option<ObjectId>,
     pub id: i32,
     #[serde(rename = "libraryId")]
-    pub library_id: i32,
+    pub library_id: Option<i32>,
     #[serde(rename = "mediaId")]
     pub media_id: i32,
     #[serde(rename = "mangaId")]
@@ -131,7 +131,7 @@ pub struct Track {
     pub finished_reading_date: Option<i64>,
     #[serde(rename = "lastChapterRead")]
     pub last_chapter_read: Option<i32>,
-    pub status: i32,
+    pub status: Option<i32>,
     #[serde(rename = "syncId")]
     pub sync_id: i32,
     pub title: String,
