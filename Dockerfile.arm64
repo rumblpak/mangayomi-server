@@ -1,0 +1,15 @@
+FROM arm64v8/rust:bookworm AS build
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+        musl-tools libssl-dev \
+        && rustup target add aarch64-unknown-linux-musl
+COPY . .
+RUN export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc && export CC=aarch64-linux-gnu-gcc
+RUN cargo build --release --target=aarch64-unknown-linux-musl
+
+FROM scratch
+
+COPY --from=build /app/target/aarch64-unknown-linux-musl/release/mangayomi-server /app/server
+CMD ["/app/server"]

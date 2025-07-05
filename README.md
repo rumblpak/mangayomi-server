@@ -30,8 +30,9 @@ A self-hosted server for Mangayomi.
 2. Make a copy of the `.env.dist` file by running `cat .env.dist >> .env`.  
    Changing the default passwords is strongly recommended, even when running locally.
 3. Add a secret key for the field "SECRET_KEY": [just auto generate it there - 64 instead of 16 bytes long](https://generate.plus/en/base64)
-4. Run the project with `docker compose up -d`
-5. Connect to the sync server using the host and port set in `.env`.  
+4. If you're running the server on an ARM64 CPU, replace Dockerfile with Dockerfile.arm64
+5. Run the project with `docker compose up -d`
+6. Connect to the sync server using the host and port set in `.env`.  
    By default, the server will be reachable at `http://localhost:8080`
 
 ## How to use it on the client
