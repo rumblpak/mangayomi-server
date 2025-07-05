@@ -2,6 +2,8 @@ FROM rust:bookworm AS build
 
 WORKDIR /app
 
+# Replace "x86_64-unknown-linux-musl" with "aarch64-unknown-linux-musl" if running on arm64 CPU
+
 RUN apt-get update && apt-get install -y \
     musl-tools pkg-config libssl-dev \
     && rustup target add x86_64-unknown-linux-musl
