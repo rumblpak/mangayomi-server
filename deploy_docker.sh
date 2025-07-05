@@ -6,7 +6,7 @@ if [ -z "$ARCH" ]; then
   exit 1
 fi
 
-if [ "$ARCH" = "arm64" ]; then
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
   docker compose -f docker-compose-arm64.yml up
 else
   docker compose -f docker-compose.yml up
