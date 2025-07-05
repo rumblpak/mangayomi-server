@@ -1,0 +1,29 @@
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct User {
+    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub email: String,
+    pub password: String,
+    pub salt: String,
+    pub role: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Backup {
+    #[serde(rename="_id", skip_serializing_if="Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub backup_path: String,
+    pub user: Option<ObjectId>,
+    pub created_at: i64,
+}
+
+#[derive(Deserialize)]
+pub struct BasicUser {
+    pub email: String,
+    pub(crate) password: String,
+}
