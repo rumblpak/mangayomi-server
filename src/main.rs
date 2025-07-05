@@ -143,7 +143,7 @@ fn rate_limiter() -> GovernorConfig<PeerIpKeyExtractor, NoOpMiddleware> {
 fn get_templates() -> Vec<(String, String)> {
     let mut templates: Vec<(String, String)> = Vec::new();
 
-    for file in WalkDir::new("./templates")
+    for file in WalkDir::new("./resources/templates")
         .into_iter()
         .filter_map(|e| e.ok())
     {
@@ -157,6 +157,7 @@ fn get_templates() -> Vec<(String, String)> {
                 .to_string();
             match fs::read_to_string(file.path()) {
                 Ok(template_raw) => {
+                    log::info!("Adding template: {}", template_name);
                     templates.push((template_name, template_raw));
                 }
                 Err(_) => {}
