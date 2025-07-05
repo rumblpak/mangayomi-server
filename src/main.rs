@@ -15,7 +15,9 @@ use actix_web::{
 use mongodb::bson::doc;
 use mongodb::options::{ClientOptions, IndexOptions};
 use mongodb::{Client, IndexModel};
+use std::fs;
 use tera::Tera;
+use walkdir::WalkDir;
 
 mod db;
 mod globals;
@@ -50,10 +52,14 @@ async fn main() -> std::io::Result<()> {
             let mut client_options = ClientOptions::parse(db_url).await.unwrap();
             client_options.max_connecting = Some(20);
             client_options.min_pool_size = Some(1);
-            Client::with_options(client_options).unwrap()
+            let result = Client::with_options(client_options).unwrap();
+            log::info!("Connected to MongoDB.");
+            result
         })
         .await;
-    let mut tera = match Tera::new("./resources/templates/**/*.html") {
+    log::info!("Initializing Tera...");
+    let mut tera = Tera::default();
+    match tera.add_raw_templates(get_templates()) {
         Ok(t) => t,
         Err(e) => {
             println!("Parsing error(s): {}", e);
@@ -61,6 +67,7 @@ async fn main() -> std::io::Result<()> {
         }
     };
     tera.autoescape_on(vec![".html"]);
+    log::info!("Initialized Tera.");
 
     let conn = db::CONN.get().unwrap();
 
@@ -102,8 +109,8 @@ async fn main() -> std::io::Result<()> {
                     .cookie_http_only(true)
                     .build(),
             )
-            .app_data(web::Data::new(tera.clone()))
             .app_data(web::Data::new(conn.clone()))
+            .app_data(web::Data::new(tera.clone()))
             .service(actix_files::Files::new("/assets", "./resources/assets"))
             .service(user::controller::register)
             .service(user::controller::login)
@@ -131,6 +138,32 @@ fn rate_limiter() -> GovernorConfig<PeerIpKeyExtractor, NoOpMiddleware> {
         .burst_size(15)
         .finish()
         .unwrap()
+}
+
+fn get_templates() -> Vec<(String, String)> {
+    let mut templates: Vec<(String, String)> = Vec::new();
+
+    for file in WalkDir::new("./templates")
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        if file.metadata().unwrap().is_file() {
+            let template_name: String = file
+                .path()
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+            match fs::read_to_string(file.path()) {
+                Ok(template_raw) => {
+                    templates.push((template_name, template_raw));
+                }
+                Err(_) => {}
+            };
+        }
+    }
+    templates
 }
 
 async fn init_db_indexes(conn: &Client) {

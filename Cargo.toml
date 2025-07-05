@@ -30,3 +30,4 @@ mongodb = "3.2.4"
 futures = "0.3.31"
 actix-governor = "0.8.0"
 validator = { version = "0.20.0", features = ["derive"] }
+walkdir = "2.5.0"

@@ -2,7 +2,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.arm64
     restart: unless-stopped
     environment:
       - DATABASE_URL=mongodb://${DATABASE_USER}:${DATABASE_PASSWORD}@database/

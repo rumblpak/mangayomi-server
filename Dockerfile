@@ -11,4 +11,5 @@ RUN cargo build --release --target=x86_64-unknown-linux-musl
 FROM scratch
 
 COPY --from=build /app/target/x86_64-unknown-linux-musl/release/mangayomi-server /app/server
+COPY ./resources /app/resources
 CMD ["/app/server"]
