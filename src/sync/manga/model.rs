@@ -141,6 +141,8 @@ pub struct Track {
     pub tracking_url: String,
     #[serde(rename = "isManga")]
     pub is_manga: Option<bool>,
+    #[serde(rename = "itemType")]
+    pub item_type: i32,
     #[serde(skip_serializing)]
     pub user: Option<ObjectId>,
     #[serde(rename = "updatedAt")]
