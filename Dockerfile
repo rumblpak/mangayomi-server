@@ -1,4 +1,4 @@
-FROM rust:bookworm AS build
+FROM rust:1.88 AS build
 
 WORKDIR /app
 
@@ -8,8 +8,9 @@ RUN apt-get update && apt-get install -y \
 COPY . .
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM scratch
-
+FROM scratch AS runtime
+ARG LISTEN_PORT=8080
 COPY --from=build /app/target/x86_64-unknown-linux-musl/release/mangayomi-server /app/server
 COPY ./resources ./resources
+EXPOSE ${LISTEN_PORT}
 CMD ["/app/server"]

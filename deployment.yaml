@@ -1,0 +1,96 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mangayomi-server
+  namespace: &namespace default
+spec:
+  driftDetection:
+    mode: enabled
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  maxHistory: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    controllers:
+      main:
+        defaultContainerOptions:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 250Mi
+            limits:
+              memory: 2Gi
+        containers:
+          main:
+            image:
+              # renovate: repository=ghcr.io/rumblpak/mangayomi-server
+              repository: ghcr.io/rumblpak/mangayomi-server
+              tag: 0.1.0
+            env:
+              TZ: America/New_York
+              DATABASE_USER: &database_user "mangayomiserver"
+              DATABASE_PASSWORD: &database_password "mangayomiserver"
+              DATABASE_URL: "mongodb://%{database_user}:%{database_password}@mongo.%{namespace}.svc/"
+              DATABASE_DB: mangayomiserver
+              HOST: 0.0.0.0
+              PORT: 8080
+              SESSION_TTL_DAYS: 30
+              # Totally random key, don't use for production, can use openssl with: openssl rand -hex 32
+              SECRET_KEY: "zQWERTYUIOPASDFGHJKLZXCVBNM0123456789QWERTYUIOPASDFGHJKLZXCVBNMz"
+          mongo:
+            image:
+              # renovate: repository=mongo
+              repository: mongo
+              tag: 8.0.11
+            env:
+              MONGO_INITDB_ROOT_USERNAME: *database_user
+              MONGO_INITDB_ROOT_PASSWORD: *database_password
+    service:
+      main:
+        controller: main
+        type: ClusterIP
+        ports:
+          http:
+            port: 8080
+            targetPort: 8080
+    ingress:
+      main:
+        className: "traefik"
+        annotations:
+          kubernetes.io/ingress.class: traefik
+        hosts:
+        - host: &host "mangayomi-server.example.com"
+          paths:
+          - path: /
+            pathType: Prefix
+            service: 
+              identifier: main
+              port: http
+        tls:
+        - hosts:
+          - *host
+          secretName: mangayomi-server-tls
+    persistence:
+      mongo-data:
+        existingClaim: mangayomi-server-mongo-data
+        advancedMounts:
+          main:
+            main:
+              - path: "/data"
+                readOnly: false

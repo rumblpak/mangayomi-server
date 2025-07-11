@@ -1,4 +1,4 @@
-FROM arm64v8/rust:bookworm AS build
+FROM arm64v8/rust:1.88 AS build
 
 WORKDIR /app
 
@@ -9,8 +9,9 @@ COPY . .
 RUN export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc && export CC=aarch64-linux-gnu-gcc
 RUN cargo build --release --target=aarch64-unknown-linux-musl
 
-FROM scratch
-
+FROM scratch AS runtime
+ARG LISTEN_PORT=8080
 COPY --from=build /app/target/aarch64-unknown-linux-musl/release/mangayomi-server /app/server
 COPY ./resources ./resources
+EXPOSE ${LISTEN_PORT}
 CMD ["/app/server"]
